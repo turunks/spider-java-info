@@ -34,6 +34,7 @@ public class ConnectUtil {
 		Document document = null;
 		try {
 			connection.header("User-Agent", "Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0; MALC)");
+			connection.header("cookie", "SUB=111");
 			document = connection.ignoreContentType(true).timeout(10000).get();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -59,7 +60,8 @@ public class ConnectUtil {
 	public static CloseableHttpResponse doGet(String href){
         CloseableHttpClient closeableHttpClient = HttpClients.createDefault();
         HttpGet httpGet = new HttpGet(href);
-        httpGet.setHeader("User-Agent", "Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0; MALC)");
+		httpGet.setHeader( "Accept", "application/json" );
+//        httpGet.setHeader("User-Agent", "Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0; MALC)");
         try {
             return closeableHttpClient.execute(httpGet);
         } catch (IOException e) {
