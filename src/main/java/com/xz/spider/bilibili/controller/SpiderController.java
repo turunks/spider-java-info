@@ -5,17 +5,8 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import com.alibaba.druid.support.json.JSONParser;
-import com.alibaba.druid.support.json.JSONUtils;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.baomidou.mybatisplus.core.conditions.Wrapper;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.gargoylesoftware.htmlunit.BrowserVersion;
-import com.gargoylesoftware.htmlunit.CookieManager;
-import com.gargoylesoftware.htmlunit.WebClient;
-import com.gargoylesoftware.htmlunit.html.HtmlPage;
-import com.gargoylesoftware.htmlunit.util.Cookie;
 import com.xz.spider.bilibili.Constants.Constants;
 import com.xz.spider.bilibili.dao.KeywordDao;
 import com.xz.spider.bilibili.dao.NewsDao;
@@ -23,21 +14,16 @@ import com.xz.spider.bilibili.pojo.*;
 import com.xz.spider.bilibili.service.NewsService;
 import com.xz.spider.bilibili.util.ExcelUtils;
 import org.apache.http.HttpEntity;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.web.bind.annotation.*;
 
 import com.xz.spider.bilibili.util.ConnectUtil;
-import com.xz.spider.bilibili.util.Constant;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -160,6 +146,7 @@ public class SpiderController {
         return null;
     }
 
+    // 获取微博首页新闻
     @RequestMapping(value = "/test/weibo", method = RequestMethod.GET)
     public List<News> getWeiBo() {
         Document baiduDocument = ConnectUtil.getDocument("https://weibo.com/");
@@ -171,18 +158,29 @@ public class SpiderController {
             System.out.println("??---" + s);
             return text;
         }).collect(Collectors.toList());
-//        String[] ss = s.split("<script charset=\"utf-8\">FM.view");
-//        List<String> list = new ArrayList<>();
-//        for (String x : ss) {
-//            if (x.contains("\"html\":\"")) {
-////                String value = getHtml(x);
-////                list.add(value);
-////                System.out.println(value);
-//            }
-//        }
         return null;
     }
 
+    // 获取微博搜索关键词舆论
+    @RequestMapping(value = "/test/weiboSerach", method = RequestMethod.GET)
+    public List<News> weiboSerach() {
+        for (String weiboSerach : Constants.WEIBO_SERACH) {
+            String serachUrl = "https://s.weibo.com/weibo?q=" + weiboSerach + "&Refer=STopic_history";
+            Document baiduDocument = ConnectUtil.getDocument(serachUrl);
+            Element body = baiduDocument.body();
+            Elements eleArr = body.getElementsByAttributeValue("node-type", "feed_list_content");
+            List<News> weiboList = eleArr.stream().map(ele -> {
+                String title = ele.ownText();
+                News news = new News();
+                news.setTitle(title);
+                news.setUrl(serachUrl);
+                return news;
+            }).collect(Collectors.toList());
+            // 插入数据title不重复
+            weiboList.forEach(news -> newsDao.insertByCondtionTxt(news));
+        }
+        return null;
+    }
 
     /**
      * 获取百度新闻资源信息
